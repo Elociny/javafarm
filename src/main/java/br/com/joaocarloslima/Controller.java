@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import br.com.joaocarloslima.exceptions.SemProdutoException;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -18,7 +19,7 @@ import javafx.scene.layout.GridPane;
 
 public class Controller implements Initializable {
 
-    // private Fazenda fazenda = new Fazenda();
+    private Fazenda fazenda = new Fazenda(new Celeiro(100));
     private List<ImageView> imageTerrenos = new ArrayList<>();
     private int sleepTime = 3000;
 
@@ -37,44 +38,38 @@ public class Controller implements Initializable {
     @FXML
     CheckBox ckbAcelerar;
 
-    // public void atualizar() {
-    //     botaoBatata.setText("Batata x " + fazenda.getCeleiro().getQtdeBatatas());
-    //     botaoCenoura.setText("Cenoura x " + fazenda.getCeleiro().getQtdeCenouras());
-    //     botaoMorango.setText("Morango x " + fazenda.getCeleiro().getQtdeMorangos());
-    //     ocupacaoDoCeleiro.setProgress(fazenda.getCeleiro().getOcupacao());
+    public void atualizar() {
+        botaoBatata.setText("Batata x " + fazenda.getCeleiro().getQtdBatata());
+        botaoCenoura.setText("Cenoura x " + fazenda.getCeleiro().getQtdCenoura());
+        botaoMorango.setText("Morango x " + fazenda.getCeleiro().getQtdMorango());
+        ocupacaoDoCeleiro.setProgress(fazenda.getCeleiro().getOcupacao() /100);
 
-    //     for (int x = 0; x < 13; x++) {
-    //         for (int y = 0; y < 13; y++) {
-    //             Terreno terreno = fazenda.getTerreno(x, y);
-    //             ImageView imageView = imageTerrenos.get(x * 13 + y);
-    //             if (terreno.getBatata() != null) {
-    //                 imageView.setImage(new Image(getClass().getResourceAsStream(terreno.getBatata().getImagem())));
-    //             } else if (terreno.getCenoura() != null) {
-    //                 imageView.setImage(new Image(getClass().getResourceAsStream(terreno.getCenoura().getImagem())));
-    //             } else if (terreno.getMorango() != null) {
-    //                 imageView.setImage(new Image(getClass().getResourceAsStream(terreno.getMorango().getImagem())));
-    //             } else {
-    //                 imageView.setImage(null);
-    //             }
-    //         }
-    //     }
-    // }
+        for (int x = 0; x < Fazenda.LINHAS; x++) {
+            for (int y = 0; y < Fazenda.COLUNAS; y++) {
+                Terreno terreno = fazenda.getTerreno(x, y);
+                ImageView imageView = imageTerrenos.get(x * Fazenda.COLUNAS + y);
+                Produto p = terreno.getProdutoPlantado();
+                if (p != null) {
+                    imageView.setImage(new Image(getClass().getResourceAsStream(p.getImagem())));
+                } else {
+                    imageView.setImage(null);
+                }
+            }
+        }
+    }
 
-    // public void ciclo() {
-    //     for (int x = 0; x < 13; x++) {
-    //         for (int y = 0; y < 13; y++) {
-    //             Terreno terreno = fazenda.getTerreno(x, y);
-    //             if (terreno.getBatata() != null) {
-    //                 terreno.getBatata().crescer();
-    //             } else if (terreno.getCenoura() != null) {
-    //                 terreno.getCenoura().crescer();
-    //             } else if (terreno.getMorango() != null) {
-    //                 terreno.getMorango().crescer();
-    //             }
-    //         }
-    //     }
-    //     atualizar();
-    // }
+    public void ciclo() {
+        for (int x = 0; x < Fazenda.LINHAS; x++) {
+            for (int y = 0; y < Fazenda.COLUNAS; y++) {
+                Terreno terreno = fazenda.getTerreno(x, y);
+                Produto p = terreno.getProdutoPlantado();
+                if (p != null) {
+                    p.crescer();
+                }
+            }
+        }
+        atualizar();
+    }
 
     public void acelerar() {
         if (ckbAcelerar.isSelected()) {
@@ -84,26 +79,32 @@ public class Controller implements Initializable {
         }
     }
 
-    // public void clockThread() {
-    //     Thread thread = new Thread(() -> {
-    //         while (true) {
-    //             try {
-    //                 Thread.sleep(sleepTime);
-    //                 Platform.runLater(() -> ciclo());
-    //                 atualizar();
-    //             } catch (InterruptedException e) {
-    //                 e.printStackTrace();
-    //             }
-    //         }
-    //     });
-    //     thread.setDaemon(true);
-    //     thread.start();
-    // }
+    public void clockThread() {
+        Thread thread = new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(sleepTime);
+                    Platform.runLater(() -> ciclo());
+                    atualizar();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+    }
 
     @Override
     public void initialize(URL arg0, ResourceBundle arg1) {
-        for (int x = 0; x < 13; x++) {
-            for (int y = 0; y < 13; y++) {
+        Celeiro celeiro = new Celeiro(100);
+        celeiro.armazenar(new Batata());
+        celeiro.armazenar(new Cenoura());
+        celeiro.armazenar(new Morango());
+        fazenda = new Fazenda(celeiro);
+
+        for (int x = 0; x < Fazenda.LINHAS; x++) {
+            for (int y = 0; y < Fazenda.COLUNAS; y++) {
                 ImageView imageView = new ImageView();
                 imageView.setFitHeight(50);
                 imageView.setFitWidth(50);
@@ -117,18 +118,14 @@ public class Controller implements Initializable {
             int y = (int) (e.getY() / 50);
 
             try{
-                // if (botaoCenoura.isSelected())
-                //     fazenda.plantarCenoura(x, y);
-                // if (botaoBatata.isSelected())
-                //     fazenda.plantarBatata(x, y);
-                // if (botaoMorango.isSelected())
-                //     fazenda.plantarMorango(x, y);
-                // if (botaoColher.isSelected())
-                //     fazenda.colher(x, y);
-    
-                // atualizar();
+                if (botaoBatata.isSelected()) fazenda.plantar(new Batata(), x, y);
+                if (botaoCenoura.isSelected()) fazenda.plantar(new Cenoura(), x, y);
+                if (botaoMorango.isSelected()) fazenda.plantar(new Morango(), x, y);
+                if (botaoColher.isSelected()) fazenda.colher(x, y);
 
-            }catch(Exception ex){
+                atualizar();
+
+            }catch(SemProdutoException ex){
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Erro");
                 alert.setHeaderText(ex.getMessage());
@@ -137,9 +134,7 @@ public class Controller implements Initializable {
 
         });
 
-        // atualizar();
-        // clockThread();
-
+        atualizar();
+        clockThread();
     }
-
 }
