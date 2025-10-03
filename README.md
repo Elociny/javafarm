@@ -126,7 +126,7 @@ src/
 
 2. Clone o repositório:
    ```bash
-   git clone https://github.com/seu-usuario/javafarm.git
+   git clone https://github.com/Elociny/javafarm.git
    cd javafarm
    ```
 
